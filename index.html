@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nagarikta Merger</title>
+    <style>
+        ::-webkit-scrollbar {
+            background-color: black;
+
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: grey;
+
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background-color: #0c0c0c;
+            color: #f2f2f2;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            animation: fadeIn 1s;
+        }
+
+        p {
+            font-size: 0.95rem;
+            color: #aaa;
+            margin-bottom: 20px;
+            animation: fadeIn 1.2s;
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed #333;
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 1.4s;
+        }
+
+        .upload-area.dragover {
+            border-color: #ff7a00;
+            background: rgba(255, 122, 0, 0.05);
+        }
+
+        .upload-text {
+            position: absolute;
+            pointer-events: none;
+            text-align: center;
+            font-size: 1rem;
+            color: #aaa;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        .upload-area.dragover .upload-text {
+            transform: scale(1.05);
+            color: #ff7a00;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Buttons */
+        .btn {
+            background: #ff7a00;
+            color: white;
+            padding: 10px 25px;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            margin: 8px;
+            transition: 0.3s;
+            border-radius: 0;
+            animation: fadeIn 1.6s;
+        }
+
+        .btn:hover:not(:disabled) {
+            background: #ff9933;
+        }
+
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        #clearBtn {
+            background: #1b1b1b;
+            border: 1px solid #ff5555;
+            color: #ff5555;
+        }
+
+        #clearBtn:hover {
+            background: #ff5555;
+            color: #fff;
+        }
+
+        /* Preview images */
+        #previewContainer {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .previewImg {
+            width: 140px;
+            height: auto;
+            border: 1px solid #444;
+            display: none;
+            opacity: 0;
+            animation: fadeIn 0.5s forwards;
+        }
+
+        /* Options */
+        .option-group {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .option-group div {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        select {
+            padding: 5px 8px;
+            font-size: 0.9rem;
+            background: #1b1b1b;
+            color: #fff;
+            border: 1px solid #444;
+        }
+
+        .format-options {
+            display: flex;
+            gap: 15px;
+        }
+
+        .format-options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        #merged {
+            margin-top: 25px;
+            max-width: 100%;
+            display: none;
+            border: 1px solid #222;
+            opacity: 0;
+            animation: fadeIn 0.6s forwards;
+        }
+
+        /* Toast */
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff7a00;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 0;
+            opacity: 0;
+            transition: 0.4s;
+        }
+
+        #toast.show {
+            opacity: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.4rem;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .option-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .format-options {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🇳🇵 Nagarikta Merger</h1>
+    <p>Upload FRONT first, then BACK.
+        <br>Everything happens securely in your browser, nothing is uploaded.
+    </p>
+
+    <div class="upload-area" id="dropZone">
+        <div class="upload-text">📸 Click or Drag & Drop</div>
+        <input type="file" id="frontInput" accept="image/*" />
+        <input type="file" id="backInput" accept="image/*" />
+    </div>
+
+    <div id="previewContainer">
+        <img id="previewFront" class="previewImg" alt="Front preview" />
+        <img id="previewBack" class="previewImg" alt="Back preview" />
+    </div>
+
+    <div class="option-group">
+        <div>
+            <label for="qualitySelect">Output Size:</label>
+            <select id="qualitySelect">
+                <option value="800">Small</option>
+                <option value="1000" selected>Medium</option>
+                <option value="1500">Large</option>
+            </select>
+        </div>
+        <div class="format-options">
+            <label><input type="radio" name="format" value="png" checked> PNG</label>
+            <label><input type="radio" name="format" value="jpeg"> JPEG</label>
+            <label><input type="radio" name="format" value="jpg"> JPG</label>
+        </div>
+    </div>
+
+    <div style="margin-top: 15px;">
+        <button class="btn" id="mergeBtn">Merge</button>
+        <button class="btn" id="downloadBtn" disabled>Download</button>
+        <button class="btn" id="clearBtn">Clear</button>
+    </div>
+
+    <img id="merged" alt="Merged Citizenship" />
+
+    <div id="toast">Done!</div>
+
+    <script>
+        const frontInput = document.getElementById("frontInput");
+        const backInput = document.getElementById("backInput");
+        const mergeBtn = document.getElementById("mergeBtn");
+        const downloadBtn = document.getElementById("downloadBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const mergedImg = document.getElementById("merged");
+        const dropZone = document.getElementById("dropZone");
+        const toast = document.getElementById("toast");
+
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.add("show");
+            setTimeout(() => toast.classList.remove("show"), 2500);
+        }
+
+        function showPreview(input, previewId) {
+            const file = input.files[0];
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            const img = document.getElementById(previewId);
+            img.src = url;
+            img.style.display = "block";
+            img.style.opacity = 0;
+            setTimeout(() => img.style.opacity = 1, 50);
+        }
+
+        frontInput.addEventListener("change", () => showPreview(frontInput, "previewFront"));
+        backInput.addEventListener("change", () => showPreview(backInput, "previewBack"));
+
+        dropZone.addEventListener("click", () => {
+            if (!frontInput.files.length) frontInput.click();
+            else backInput.click();
+        });
+
+        dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+        dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+
+        dropZone.addEventListener("drop", (e) => {
+            e.preventDefault(); dropZone.classList.remove("dragover");
+            const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith("image/"));
+            if (!frontInput.files.length && files[0]) {
+                frontInput.files = createFileList(files[0]);
+                showPreview(frontInput, "previewFront");
+                showToast("📸 Front image uploaded!");
+            } else if (!backInput.files.length && files[0]) {
+                backInput.files = createFileList(files[0]);
+                showPreview(backInput, "previewBack");
+                showToast("📸 Back image uploaded!");
+            } else {
+                showToast("⚠️ Only one image at a time for drag & drop!");
+            }
+        });
+
+        function createFileList(file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            return dt.files;
+        }
+
+        mergeBtn.addEventListener("click", async () => {
+            const frontFile = frontInput.files[0];
+            const backFile = backInput.files[0];
+            if (!frontFile || !backFile) return showToast("⚠️ Please upload both images!");
+
+            const [frontImg, backImg] = await Promise.all([loadImage(frontFile), loadImage(backFile)]);
+            const targetWidth = parseInt(document.getElementById("qualitySelect").value);
+            const scaleFront = targetWidth / frontImg.width;
+            const scaleBack = targetWidth / backImg.width;
+            const h = Math.max(frontImg.height * scaleFront, backImg.height * scaleBack);
+
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = h * 2;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(frontImg, 0, 0, targetWidth, h);
+            ctx.drawImage(backImg, 0, h, targetWidth, h);
+
+            const format = document.querySelector('input[name="format"]:checked').value;
+            const mime = format === "jpeg" || format === "jpg" ? "image/jpeg" : "image/png";
+            const dataURL = canvas.toDataURL(mime, 0.95);
+
+            mergedImg.src = dataURL;
+            mergedImg.style.display = "block";
+            mergedImg.style.opacity = 0;
+            setTimeout(() => mergedImg.style.opacity = 1, 50);
+            downloadBtn.disabled = false;
+            showToast("✅ Merged Successfully!");
+        });
+
+        downloadBtn.addEventListener("click", () => {
+            const a = document.createElement("a");
+            const format = document.querySelector('input[name="format"]:checked').value;
+            a.href = mergedImg.src;
+            a.download = `merged_citizenship.${format}`;
+            a.click();
+            showToast("📥 Downloaded!");
+        });
+
+        clearBtn.addEventListener("click", () => {
+            frontInput.value = "";
+            backInput.value = "";
+            mergedImg.style.display = "none";
+            mergedImg.src = "";
+            document.getElementById("previewFront").style.display = "none";
+            document.getElementById("previewBack").style.display = "none";
+            downloadBtn.disabled = true;
+            showToast("🧹 Cleared all fields!");
+        });
+
+        function loadImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.src = URL.createObjectURL(file);
+            });
+        }
+    </script>
+</body>
+
+</html>
